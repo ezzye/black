@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+<head>
+    <title>Image Generator</title>
+</head>
+<body>
+<h1>Generate an Image</h1>
+{% if error %}
+<p style="color:red;">{{ error }}</p>
+{% endif %}
+<form method="post">
+    <label for="prompt">Prompt:</label><br>
+    <input type="text" id="prompt" name="prompt" size="100"><br><br>
+    <input type="submit" value="Generate">
+</form>
+
+{% if image_filename %}
+<h2>Generated Image:</h2>
+<img src="{{ url_for('static', filename=image_filename) }}" alt="Generated Image"><br>
+<a href="{{ url_for('static', filename=image_filename) }}" download>Download Image</a>
+{% endif %}
+</body>
+</html>
