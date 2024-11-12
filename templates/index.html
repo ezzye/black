@@ -9,8 +9,56 @@
 <p style="color:red;">{{ error }}</p>
 {% endif %}
 <form method="post">
+    <label for="endpoint">Select Endpoint:</label><br>
+    <select id="endpoint" name="endpoint">
+        <option value="flux-pro-1.1">flux-pro-1.1</option>
+        <option value="flux-pro">flux-pro</option>
+        <option value="flux-dev">flux-dev</option>
+        <option value="flux-pro-1.1-ultra">flux-pro-1.1-ultra</option>
+    </select><br><br>
+
     <label for="prompt">Prompt:</label><br>
-    <input type="text" id="prompt" name="prompt" size="100"><br><br>
+    <input type="text" id="prompt" name="prompt" size="100" required><br><br>
+
+    <!-- Common Parameters -->
+    <label for="width">Width:</label><br>
+    <input type="number" id="width" name="width" value="1024" min="256" max="1440" step="32"><br><br>
+
+    <label for="height">Height:</label><br>
+    <input type="number" id="height" name="height" value="768" min="256" max="1440" step="32"><br><br>
+
+    <label for="prompt_upsampling">Prompt Upsampling:</label>
+    <input type="checkbox" id="prompt_upsampling" name="prompt_upsampling"><br><br>
+
+    <label for="seed">Seed:</label><br>
+    <input type="number" id="seed" name="seed"><br><br>
+
+    <label for="safety_tolerance">Safety Tolerance (0-6):</label><br>
+    <input type="number" id="safety_tolerance" name="safety_tolerance" min="0" max="6" value="2"><br><br>
+
+    <label for="output_format">Output Format:</label><br>
+    <select id="output_format" name="output_format">
+        <option value="jpeg">jpeg</option>
+        <option value="png">png</option>
+    </select><br><br>
+
+    <!-- Parameters specific to flux-pro and flux-dev -->
+    <label for="steps">Steps:</label><br>
+    <input type="number" id="steps" name="steps" min="1" max="50" value="40"><br><br>
+
+    <label for="guidance">Guidance (1.5-5):</label><br>
+    <input type="number" id="guidance" name="guidance" min="1.5" max="5" step="0.1" value="2.5"><br><br>
+
+    <label for="interval">Interval (1-4):</label><br>
+    <input type="number" id="interval" name="interval" min="1" max="4" step="0.1" value="2"><br><br>
+
+    <!-- Parameters specific to flux-pro-1.1-ultra -->
+    <label for="aspect_ratio">Aspect Ratio:</label><br>
+    <input type="text" id="aspect_ratio" name="aspect_ratio" value="16:9"><br><br>
+
+    <label for="raw">Raw (Ultra Mode):</label>
+    <input type="checkbox" id="raw" name="raw"><br><br>
+
     <input type="submit" value="Generate">
 </form>
 
