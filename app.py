@@ -16,17 +16,20 @@ ENDPOINTS = {
     },
     'flux-pro': {
         'url': 'https://api.bfl.ml/v1/flux-pro',
-        'params': ['prompt', 'width', 'height', 'steps', 'prompt_upsampling', 'seed', 'guidance', 'safety_tolerance', 'interval', 'output_format']
+        'params': ['prompt', 'width', 'height', 'steps', 'prompt_upsampling', 'seed', 'guidance', 'safety_tolerance',
+                   'interval', 'output_format']
     },
     'flux-dev': {
         'url': 'https://api.bfl.ml/v1/flux-dev',
-        'params': ['prompt', 'width', 'height', 'steps', 'prompt_upsampling', 'seed', 'guidance', 'safety_tolerance', 'output_format']
+        'params': ['prompt', 'width', 'height', 'steps', 'prompt_upsampling', 'seed', 'guidance', 'safety_tolerance',
+                   'output_format']
     },
     'flux-pro-1.1-ultra': {
         'url': 'https://api.bfl.ml/v1/flux-pro-1.1-ultra',
         'params': ['prompt', 'seed', 'aspect_ratio', 'safety_tolerance', 'output_format', 'raw']
     },
 }
+
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -38,17 +41,28 @@ def index():
         endpoint_url = endpoint_info['url']
         endpoint_params = endpoint_info['params']
 
+        # Handle image size selection
+        image_size = request.form.get('image_size', '1024x768')
+        if 'x' in image_size:
+            width, height = map(int, image_size.split('x'))
+        else:
+            width, height = 1024, 768
+
         # Build the payload
         payload = {}
         for param in endpoint_params:
             if param in ['prompt_upsampling', 'raw']:
                 value = param in request.form  # True if checked, False if not
                 payload[param] = value
+            elif param == 'width':
+                payload['width'] = width
+            elif param == 'height':
+                payload['height'] = height
             else:
                 value = request.form.get(param)
                 if value:
                     # Convert types as necessary
-                    if param in ['width', 'height', 'steps', 'seed', 'safety_tolerance']:
+                    if param in ['steps', 'seed', 'safety_tolerance']:
                         value = int(value)
                     elif param in ['guidance', 'interval']:
                         value = float(value)
@@ -116,6 +130,7 @@ def index():
             return render_template('index.html', error="Error fetching generated image.")
 
     return render_template('index.html')
+
 
 if __name__ == '__main__':
     app.run(debug=True)

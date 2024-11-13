@@ -1,71 +1,245 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-    <title>Image Generator</title>
+  <title>AI Image Generator</title>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <!-- Include Local Bootstrap CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+  <!-- Include Local FontAwesome CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/all.min.css') }}">
+  <style>
+    /* Custom styles */
+    .preview-image {
+      max-width: 100%;
+      height: auto;
+    }
+    .spinner-border {
+      width: 3rem;
+      height: 3rem;
+    }
+    .tooltip-inner {
+      max-width: 350px;
+      text-align: left;
+    }
+  </style>
 </head>
 <body>
-<h1>Generate an Image</h1>
-{% if error %}
-<p style="color:red;">{{ error }}</p>
-{% endif %}
-<form method="post">
-    <label for="endpoint">Select Endpoint:</label><br>
-    <select id="endpoint" name="endpoint">
-        <option value="flux-pro-1.1">flux-pro-1.1</option>
-        <option value="flux-pro">flux-pro</option>
-        <option value="flux-dev">flux-dev</option>
-        <option value="flux-pro-1.1-ultra">flux-pro-1.1-ultra</option>
-    </select><br><br>
+<div class="container mt-5">
+  <h1 class="mb-4">AI Image Generator</h1>
 
-    <label for="prompt">Prompt:</label><br>
-    <input type="text" id="prompt" name="prompt" size="100" required><br><br>
+  {% if error %}
+  <div class="alert alert-danger" role="alert">
+    {{ error }}
+  </div>
+  {% endif %}
 
-    <!-- Common Parameters -->
-    <label for="width">Width:</label><br>
-    <input type="number" id="width" name="width" value="1024" min="256" max="1440" step="32"><br><br>
+  <form method="post" id="generate-form">
+    <!-- Prompt Input -->
+    <div class="form-group">
+      <label for="prompt">Enter your prompt:</label>
+      <textarea class="form-control" id="prompt" name="prompt" rows="2"
+                placeholder="Describe the image you want to generate..." required></textarea>
+      <small class="form-text text-muted">Example: A serene landscape with mountains during sunset.</small>
+    </div>
 
-    <label for="height">Height:</label><br>
-    <input type="number" id="height" name="height" value="768" min="256" max="1440" step="32"><br><br>
+    <!-- Prompt Suggestions -->
+    <div class="form-group">
+      <label for="prompt-examples">Or choose a prompt example:</label>
+      <select class="form-control" id="prompt-examples">
+        <option value="">-- Select an example prompt --</option>
+        <option value="A futuristic cityscape at night with neon lights.">Futuristic Cityscape</option>
+        <option value="A beautiful portrait of a woman in Renaissance style.">Renaissance Portrait</option>
+        <option value="A small cottage in a lush forest during autumn.">Autumn Forest Cottage</option>
+        <option value="An astronaut riding a horse in space.">Astronaut in Space</option>
+      </select>
+    </div>
 
-    <label for="prompt_upsampling">Prompt Upsampling:</label>
-    <input type="checkbox" id="prompt_upsampling" name="prompt_upsampling"><br><br>
+    <!-- Endpoint Selection -->
+    <div class="form-group">
+      <label for="endpoint">Select Model:</label>
+      <select class="form-control" id="endpoint" name="endpoint">
+        <option value="flux-pro-1.1">FLUX Pro 1.1 [Standard]</option>
+        <option value="flux-pro">FLUX Pro 1.0 [Advanced]</option>
+        <option value="flux-dev">FLUX Dev [Experimental]</option>
+        <option value="flux-pro-1.1-ultra">FLUX Pro 1.1 Ultra [High Quality]</option>
+      </select>
+      <small class="form-text text-muted">Choose the AI model for image generation.</small>
+    </div>
 
-    <label for="seed">Seed:</label><br>
-    <input type="number" id="seed" name="seed"><br><br>
+    <!-- Basic Parameters -->
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <label for="image-size">Image Size:</label>
+        <select class="form-control" id="image-size" name="image_size">
+          <option value="512x512">512 x 512</option>
+          <option value="768x768">768 x 768</option>
+          <option value="1024x768" selected>1024 x 768</option>
+          <option value="1024x1024">1024 x 1024</option>
+        </select>
+        <small class="form-text text-muted">Select the dimensions of the generated image.</small>
+      </div>
+      <div class="form-group col-md-6">
+        <label for="output_format">Output Format:</label>
+        <select class="form-control" id="output_format" name="output_format">
+          <option value="jpeg">JPEG</option>
+          <option value="png">PNG</option>
+        </select>
+      </div>
+    </div>
 
-    <label for="safety_tolerance">Safety Tolerance (0-6):</label><br>
-    <input type="number" id="safety_tolerance" name="safety_tolerance" min="0" max="6" value="2"><br><br>
+    <!-- Advanced Settings Toggle -->
+    <div class="form-group">
+      <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#advanced-settings"
+              aria-expanded="false" aria-controls="advanced-settings">
+        Advanced Settings
+      </button>
+    </div>
 
-    <label for="output_format">Output Format:</label><br>
-    <select id="output_format" name="output_format">
-        <option value="jpeg">jpeg</option>
-        <option value="png">png</option>
-    </select><br><br>
+    <!-- Advanced Parameters -->
+    <div class="collapse" id="advanced-settings">
+      <div class="card card-body">
+        <!-- Seed -->
+        <div class="form-group">
+          <label for="seed">Seed:
+            <span data-toggle="tooltip" title="Set a seed for reproducible results. Leave blank for random seed.">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+          </label>
+          <input type="number" class="form-control" id="seed" name="seed" placeholder="Optional">
+        </div>
 
-    <!-- Parameters specific to flux-pro and flux-dev -->
-    <label for="steps">Steps:</label><br>
-    <input type="number" id="steps" name="steps" min="1" max="50" value="40"><br><br>
+        <!-- Prompt Upsampling -->
+        <div class="form-group form-check">
+          <input type="checkbox" class="form-check-input" id="prompt_upsampling" name="prompt_upsampling">
+          <label class="form-check-label" for="prompt_upsampling">Enable Prompt Upsampling
+            <span data-toggle="tooltip" title="Automatically enhances the prompt for more creative generation.">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+          </label>
+        </div>
 
-    <label for="guidance">Guidance (1.5-5):</label><br>
-    <input type="number" id="guidance" name="guidance" min="1.5" max="5" step="0.1" value="2.5"><br><br>
+        <!-- Safety Tolerance -->
+        <div class="form-group">
+          <label for="safety_tolerance">Safety Tolerance (0-6):
+            <span data-toggle="tooltip" title="Controls the content moderation level. 0 is most strict, 6 is least strict.">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+          </label>
+          <input type="number" class="form-control" id="safety_tolerance" name="safety_tolerance" min="0"
+                 max="6" value="2">
+        </div>
 
-    <label for="interval">Interval (1-4):</label><br>
-    <input type="number" id="interval" name="interval" min="1" max="4" step="0.1" value="2"><br><br>
+        <!-- Steps -->
+        <div class="form-group">
+          <label for="steps">Steps:
+            <span data-toggle="tooltip" title="Number of steps for the image generation process. Higher values may improve quality but increase processing time.">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+          </label>
+          <input type="number" class="form-control" id="steps" name="steps" min="1" max="50" value="40">
+        </div>
 
-    <!-- Parameters specific to flux-pro-1.1-ultra -->
-    <label for="aspect_ratio">Aspect Ratio:</label><br>
-    <input type="text" id="aspect_ratio" name="aspect_ratio" value="16:9"><br><br>
+        <!-- Guidance -->
+        <div class="form-group">
+          <label for="guidance">Guidance (1.5-5):
+            <span data-toggle="tooltip" title="Adjusts prompt adherence. Higher values increase adherence but may reduce realism.">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+          </label>
+          <input type="number" class="form-control" id="guidance" name="guidance" min="1.5" max="5"
+                 step="0.1" value="2.5">
+        </div>
 
-    <label for="raw">Raw (Ultra Mode):</label>
-    <input type="checkbox" id="raw" name="raw"><br><br>
+        <!-- Interval -->
+        <div class="form-group">
+          <label for="interval">Interval (1-4):
+            <span data-toggle="tooltip" title="Parameter for guidance control.">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+          </label>
+          <input type="number" class="form-control" id="interval" name="interval" min="1" max="4"
+                 step="0.1" value="2">
+        </div>
 
-    <input type="submit" value="Generate">
-</form>
+        <!-- Aspect Ratio -->
+        <div class="form-group">
+          <label for="aspect_ratio">Aspect Ratio:
+            <span data-toggle="tooltip" title="Set the aspect ratio for Ultra mode. Between 21:9 and 9:21">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+          </label>
+          <input type="text" class="form-control" id="aspect_ratio" name="aspect_ratio" value="16:9">
+        </div>
 
-{% if image_filename %}
-<h2>Generated Image:</h2>
-<img src="{{ url_for('static', filename=image_filename) }}" alt="Generated Image"><br>
-<a href="{{ url_for('static', filename=image_filename) }}" download>Download Image</a>
-{% endif %}
+        <!-- Raw Mode -->
+        <div class="form-group form-check">
+          <input type="checkbox" class="form-check-input" id="raw" name="raw">
+          <label class="form-check-label" for="raw">Enable Raw Mode
+            <span data-toggle="tooltip" title="Generates less processed, more natural-looking images.">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit Button -->
+    <button type="submit" class="btn btn-primary mt-3">Generate Image</button>
+  </form>
+
+  <!-- Loading Indicator -->
+  <div id="loading-indicator" class="text-center mt-5" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+      <span class="sr-only">Generating image...</span>
+    </div>
+    <p class="mt-2">Generating image, please wait...</p>
+  </div>
+
+  <!-- Image Preview -->
+  {% if image_filename %}
+  <div class="mt-5">
+    <h2>Generated Image:</h2>
+    <img src="{{ url_for('static', filename=image_filename) }}" alt="Generated Image" class="preview-image"><br>
+    <a href="{{ url_for('static', filename=image_filename) }}" class="btn btn-success mt-3" download>Download Image</a>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- Include Local jQuery -->
+<script src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script>
+<!-- Include Local Popper.js -->
+<script src="{{ url_for('static', filename='js/popper.min.js') }}"></script>
+<!-- Include Local Bootstrap JS -->
+<script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+<!-- Include Local FontAwesome JS (if using icons via JS) -->
+<!-- <script src="{{ url_for('static', filename='js/all.min.js') }}"></script> -->
+<script>
+  // Tooltip initialization
+  $(function () {
+    $('[data-toggle="tooltip"]').tooltip()
+  });
+
+  // Show loading indicator on form submit
+  $('#generate-form').on('submit', function () {
+    $('#loading-indicator').show();
+  });
+
+  // Copy selected example prompt to the prompt textarea
+  $('#prompt-examples').on('change', function () {
+    const selectedPrompt = $(this).val();
+    if (selectedPrompt) {
+      $('#prompt').val(selectedPrompt);
+    }
+  });
+
+  // Adjust form fields based on selected endpoint
+  $('#endpoint').on('change', function () {
+    const selectedEndpoint = $(this).val();
+    // Hide or show fields based on endpoint (add logic if necessary)
+  });
+</script>
 </body>
 </html>
